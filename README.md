@@ -8,19 +8,14 @@
 </div>
 
 # nim-inkling-api-research
+
 ### Compatibility, parameter discovery, and latency characterization for `thinkingmachines/inkling` on NVIDIA NIM.
 
-Research-grade tooling that answers the questions you hit *before* you build on a new NIM endpoint: which parameters does it actually accept, what does it silently ignore, how does latency scale with reasoning effort, and where do strict-typed clients crash.
-
-## Why this exists
+> Research-grade tooling that answers the questions you hit *before* you build on a new NIM endpoint: which parameters does it actually accept, what does it silently ignore, how does latency scale with reasoning effort, and where do strict-typed clients crash.
 
 NIM endpoints are OpenAI-*shaped*, not OpenAI-*compatible*. Parameters get accepted-but-ignored, rejected outright, or return shapes that break typed clients. This suite maps the real contract of the `thinkingmachines/inkling` endpoint — a 975B MoE — so downstream code is written against observed behavior, not docs.
 
-## What it does
-
-- **`cmd/benchmark/main.go`** — Go benchmark harness (projectdiscovery `goflags`/`gologger`): single-shot tests, parameter discovery sweeps, full benchmark runs with JSON output.
-- **`templates/inkling-api-test.yaml`** — Nuclei template for API surface probing against `https://integrate.api.nvidia.com/v1`.
-- **`run.sh`** — one entry point, four modes: `single`, `discover`, `benchmark`, `nuclei`.
+---
 
 ## Key findings
 
@@ -55,7 +50,7 @@ When `reasoning_effort=none`, the API returns `null` for `reasoning_tokens`. Str
 
 **Fix**: use `reasoning_effort: "max"` or handle nullable fields.
 
-## Model specs
+### Model specs
 
 | Spec | Value |
 |---|---|
@@ -66,6 +61,8 @@ When `reasoning_effort=none`, the API returns `null` for `reasoning_tokens`. Str
 | Layers | 66 |
 | Experts | 256 routed + 2 shared |
 
+---
+
 ## Quick start
 
 ```bash
@@ -75,6 +72,8 @@ export NVIDIA_API_KEY          # from your secrets store — never hardcoded
 ```
 
 All four modes: `./run.sh [single|discover|benchmark|nuclei]`. The `nuclei` mode runs the template in `templates/` and writes `results/nuclei.jsonl`.
+
+---
 
 ## Architecture
 
@@ -92,15 +91,33 @@ flowchart LR
     N --> J
 ```
 
-## Security
+| Piece | What it does |
+|---|---|
+| `cmd/benchmark/main.go` | Go benchmark harness (projectdiscovery `goflags`/`gologger`): single-shot tests, parameter discovery sweeps, full benchmark runs with JSON output |
+| `templates/inkling-api-test.yaml` | Nuclei template for API surface probing against `https://integrate.api.nvidia.com/v1` |
+| `run.sh` | One entry point, four modes: `single`, `discover`, `benchmark`, `nuclei` |
 
-- `NVIDIA_API_KEY` comes from the environment. `run.sh` refuses to run without it — the key is never written into the repo.
+---
+
+## Config
+
+| Knob | Source |
+|---|---|
+| `NVIDIA_API_KEY` | **environment only** — `run.sh` refuses to run without it; the key is never written into the repo |
+
+Direct harness use: `cd cmd/benchmark && go run . -effort max -max-tokens 16384`.
+
+---
 
 ## Dev
 
 - `go.mod` — module `github.com/toxicwind/nim-inkling-api-research`, Go 1.21, projectdiscovery `goflags`/`gologger`
-- Direct harness use: `cd cmd/benchmark && go run . -effort max -max-tokens 16384`
+- Benchmark harness lives in `cmd/benchmark/`; results land in `results/` as JSON/JSONL
 
-## License
+---
 
-MIT — see [LICENSE](LICENSE).
+## License & security
+
+**MIT** — see [LICENSE](LICENSE).
+
+`NVIDIA_API_KEY` comes from the environment — never committed, never logged. Probe targets are read-only API-surface tests; no destructive requests are issued.
