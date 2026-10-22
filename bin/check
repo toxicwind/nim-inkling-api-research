@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# nim-inkling-api-research — self-test gate (PASS/FAIL).
+# NVIDIA NIM API research tool. Gate = the Go benchmark module builds (go vet +
+# go build) and run.sh launcher present. No live API call / key needed.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+export RUN_FAST_ACTIVE=0
+GO="${GO:-go}"
+
+echo "== nim-inkling check: start =="
+[ -f run.sh ] || { echo "FAIL: run.sh missing"; exit 1; }
+[ -d cmd/benchmark ] || { echo "FAIL: cmd/benchmark missing"; exit 1; }
+
+set +e
+bout="$("$GO" build ./cmd/... 2>&1)"
+brc=$?
+set -e
+echo "$bout"
+[ "$brc" -eq 0 ] || { echo "FAIL: go build rc=$brc"; exit 1; }
+
+echo "== nim-inkling check: PASS =="
+exit 0

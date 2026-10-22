@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# nim-inkling-api-research — primary operation: research the NVIDIA NIM API
+# surface (single / discover / benchmark / nuclei probe).
+#
+# Usage:
+#   bin/run check          # fast gate: go build + run.sh present
+#   bin/run [single|discover|benchmark]   # default single; needs NVIDIA_API_KEY
+set -euo pipefail
+cd "$(dirname "$0")/.."
+export RUN_FAST_ACTIVE=0
+
+if [ "${1:-}" = "check" ]; then exec ./bin/check; fi
+[ -f run.sh ] || { echo "FAIL: run.sh missing"; exit 1; }
+exec bash run.sh "${1:-single}"
